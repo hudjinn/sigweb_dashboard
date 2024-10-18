@@ -17,6 +17,7 @@ Este repositório contém o código para o **SIGWeb Dashboard**, uma plataforma 
 - **Leaflet**: Biblioteca JavaScript para visualização de mapas interativos.
 - **HTML/CSS/JavaScript**: Tecnologias usadas para criar a interface de usuário do dashboard.
 - **Python**: Linguagem principal utilizada no backend.
+- **Docker**: Plataforma que facilita a criação, o gerenciamento e a execução de aplicativos em contêineres. É utilizado para garantir que o ambiente de desenvolvimento e produção sejam consistentes, facilitando a implantação e a escalabilidade do sistema.
 
 ## Requisitos de Sistema
 
@@ -39,20 +40,7 @@ Para rodar o projeto localmente, certifique-se de ter os seguintes requisitos in
    cd sigweb_dashboard
    ```
 
-3. Crie um ambiente virtual e ative-o:
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # No Windows, use venv\Scripts\activate
-   ```
-
-4. Instale as dependências:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. Configure o banco de dados PostgreSQL e as variáveis de ambiente no arquivo `.env`. Exemplo de variáveis de ambiente:
+3. Configure o banco de dados PostgreSQL e as variáveis de ambiente no arquivo `.env`. Exemplo de variáveis de ambiente:
 
    ```bash
     DB_HOST=""
@@ -62,16 +50,10 @@ Para rodar o projeto localmente, certifique-se de ter os seguintes requisitos in
     DB_PASSWORD=""
    ```
 
-6. Execute as migrações para configurar o banco de dados:
+4. Inicie os containeres
 
    ```bash
-   flask db upgrade
-   ```
-
-7. Inicie o servidor localmente:
-
-   ```bash
-   flask run
+   docker compose up -d --build
    ```
 
    O dashboard estará acessível em `http://localhost:9001`.
