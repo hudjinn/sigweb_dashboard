@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  website_atividade:
+  sigweb_dashboard:
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,8 +13,8 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # Monta o arquivo de configuração
+      # - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # Monta o arquivo de configuração
     ports:
       - "9001:9001"  # Mapeia a porta 9001 do Nginx para a porta 9001 do host
     depends_on:
-      - website_atividade  # Garante que o Flask esteja rodando antes do Nginx
+      - sigweb_dashboard  # Garante que o Flask esteja rodando antes do Nginx
