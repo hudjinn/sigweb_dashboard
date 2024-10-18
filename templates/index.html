@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Estatísticas de Revisão</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            background-color: #343a40;
+            color: #fff;
+            /* Garantir que o conteúdo ocupe a tela sem a necessidade de rolagem */
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 90%; /* Limita o container a uma porcentagem da largura da tela */
+            margin: 0 auto; /* Centraliza o container horizontalmente */
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        #map, #canvas-container {
+            display: flex;
+            justify-content: flex-end; /* Alinha o conteúdo à esquerda */
+        }
+        #donutChart {
+            width: 100%;  /* Garantir que o gráfico ocupe a largura disponível */
+            max-width: 300px;  /* Defina um limite máximo para a largura */
+            height: 200px;  /* Altura controlada */
+            margin: 0 auto;  /* Centraliza o gráfico horizontalmente */
+        }
+
+        #lineChart {
+            height: 250px; /* Ajuste individual para o gráfico de linha */
+        }
+
+        #map {
+            height: 300px; /* Mapa separado com altura controlada */
+        }
+        #map {
+            background-color: transparent;
+        }
+        .row {
+            margin-bottom: 20px; /* Reduz o espaçamento entre as linhas */
+        }
+        /* Ajuste para a seção inferior (tabela e estatísticas) */
+        .footer-grid {
+            display: flex;
+            justify-content: space-around;
+            gap: 40px; /* Adiciona espaçamento entre as colunas */
+            margin-top: 20px;
+            flex-wrap: wrap; /* Garante que os itens se ajustem em telas menores */
+        }
+        .footer-item {
+            flex-grow: 1;
+            padding: 20px; /* Mais espaçamento dentro da div */
+            min-width: 300px;
+            text-align: center;
+            background-color: #2c2f33; /* Fundo escuro para combinar com o tema */
+            border: 2px solid #28a745; /* Borda verde que combina com as áreas revisadas */
+            border-radius: 10px; /* Bordas arredondadas */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+            transition: transform 0.3s ease; /* Transição suave */
+        }
+
+        .footer-item:hover {
+            transform: translateY(-5px); /* Efeito hover para destacar */
+        }
+
+        .footer-item h3 {
+            color: #ffffff; /* Título em branco para visibilidade */
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .footer-item p {
+            color: #ffffff; /* Texto em branco para contraste */
+            font-size: 1.1em; /* Um pouco maior para maior legibilidade */
+        }
+        /* Ajuste para a tabela e manter visível */
+        .table-container {
+            overflow: auto;
+            max-height: 200px; /* Limita a altura máxima da tabela */
+        }
+        .text-center.mt-4 {
+            margin-top: 10px; /* Aproxima os botões do gráfico */
+        }
+
+        h1, h2, h3 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-right: 5px; /* Aproxima os botões */
+        }
+        /* Ajuste para centralizar os gráficos e mapas */
+        .graphic-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px; /* Espaço entre os gráficos */
+        }
+        .info.legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        header {
+            background-color: #1f2327; /* Cor de fundo mais escura para destacar */
+            padding: 15px; /* Espaçamento interno confortável */
+            border-bottom: 3px solid #28a745; /* Borda inferior verde */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra abaixo do header */
+            text-align: center; /* Centraliza o conteúdo */
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: #ffffff; /* Título em branco */
+            font-size: 2.5em; /* Aumenta o tamanho do título */
+            margin: 0;
+            font-weight: bold;
+        }
+
+        header h2 {
+            color: #cccccc; /* Subtítulo com uma cor mais suave */
+            font-size: 1.5em; /* Tamanho menor para o subtítulo */
+            margin-top: 10px;
+            margin-bottom: 0;
+            
+            font-weight: normal;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Subproduto 1 - Sigweb</h1>
+        <h2>Dashboard de Estatísticas de Revisão dos Lotes</h2>
+    </header>
+    <div class="container mt-4">
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div id="canvas-container">
+                    <canvas id="donutChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div id="canvas-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="text-center mt-4">
+                    <button id="btn7Dias" class="btn btn-primary" onclick="fetchLineChart('7-dias')">Últimos 7 Dias</button>
+                    <button id="btnMes" class="btn btn-secondary" onclick="fetchLineChart('mes')">Últimos 30 Dias</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div id="map"></div>
+            </div>
+        </div>
+    
+        <div class="row mb-4 justify-content-center">
+            <div class="col-md-4 text-center">
+                <label for="municipioSelect">Selecione o município:</label>
+                <select id="municipioSelect" class="form-select" onchange="fetchData()">
+                    <option value="">Todos</option>
+                    <!-- Adicione as opções de municípios aqui -->
+                </select>
+            </div>
+        </div>
+    
+        <!-- Footer com as estatísticas gerais e a tabela de revisores lado a lado -->
+        <div class="footer-grid">
+            <div class="footer-item">
+                <h3>Estatísticas Gerais</h3>
+                <p>Área Total: <span id="totalAreas"></span>km²</p>
+                <p>Total de Áreas Revisadas: <span id="totalRevisedAreas"></span>km²</p>
+                <p>Porcentagem de Áreas Revisadas: <span id="percentageRevised"></span>%</p>
+            </div>
+    
+            <div class="footer-item">
+                <h3>Estatísticas por Revisor</h3>
+                <div class="table-container">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Revisor</th>
+                                <th>Áreas Revisadas (km²)</th>
+                                <th>Porcentagem Revisada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revisoresTableBody">
+                            <!-- Os dados dos revisores serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script>
+        let map;
+        let limitesLayer;  // Variável global para armazenar o layer dos limites
+
+        function initMap() {
+            // Cria o mapa centralizado no Ceará, sem adicionar camadas de tiles
+            map = L.map('map').setView([-5, -39.5], 6); // Centro do Ceará
+
+            carregarLimitesMunicipios();
+            adicionarLegenda();
+        }
+
+        function adicionarLegenda() {
+            // Cria um controle de legenda
+            const legenda = L.control({ position: 'bottomright' });
+
+            legenda.onAdd = function () {
+                const div = L.DomUtil.create('div', 'info legend');
+
+                // Define os intervalos de porcentagem com base nas faixas corretas
+                const porcentagens = [0, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
+                
+                // Define as cores correspondentes às faixas
+                const cores = [
+                    "#808080", // 0% - apenas 0%
+                    "#FF0000", // 0-10%
+                    "#FF4000", // 10-20%
+                    "#FF8000", // 20-30%
+                    "#FFBF00", // 30-40%
+                    "#FFFF00", // 40-50%
+                    "#BFFF00", // 50-60%
+                    "#80FF00", // 60-70%
+                    "#40FF00", // 70-80%
+                    "#00FF00", // 80-90%
+                    "#00FF80",  // 90-99%
+                    "#17ad19",
+                ];
+
+                // Cria a legenda com as faixas de porcentagem e as cores correspondentes
+                for (let i = 0; i < porcentagens.length - 1; i++) {
+                    if (i === 0) {
+                        // Primeira faixa - 0% apenas
+                        div.innerHTML +=
+                            '<i style="background:' + cores[i] + '"></i> ' +
+                            porcentagens[i] + '%<br>';
+                    } else {
+                        // Faixas subsequentes - intervalos
+                        div.innerHTML +=
+                            '<i style="background:' + cores[i] + '"></i> ' +
+                            porcentagens[i] + '&ndash;' + porcentagens[i + 1] + '%<br>';
+                    }
+                }
+
+                // Última faixa - 90-100%
+                div.innerHTML +=
+                    '<i style="background:' + cores[cores.length - 1] + '"></i> ' +
+                    '100%';
+
+                return div;
+            };
+
+            legenda.addTo(map);
+        }
+
+
+        
+        async function carregarLimitesMunicipios() {
+            const response = await fetch('/limites-municipios'); // Rota da API que retorna o GeoJSON
+            const geojson = await response.json();
+            console.log(geojson); // Verifica os dados recebidos
+
+            // Adiciona o GeoJSON dos limites municipais ao mapa
+            limitesLayer = L.geoJSON(geojson, {
+                style: function (feature) {
+                    return {
+                        color: "#FFFFFF",
+                        fillColor: feature.properties.cor,
+                        weight: 1,
+                        fillOpacity: 0.7
+                    };
+                }
+            }).addTo(map);
+
+            // Ajusta o zoom para os limites carregados
+            map.fitBounds(limitesLayer.getBounds());
+        }
+
+
+        let donutChartInstance = null; // Variável global para manter a instância do gráfico donut
+        let lineChartInstance = null; // Variável global para manter a instância do gráfico de linha
+
+        async function fetchData() {
+            const municipio = document.getElementById('municipioSelect').value;
+
+            const response = await fetch('/articulacao' + (municipio ? '?municipio=' + municipio : ''));
+            const data = await response.json();
+
+            // Atualiza as estatísticas gerais
+            document.getElementById('totalAreas').innerText = data.totalAreas.toFixed(2);
+            document.getElementById('totalRevisedAreas').innerText = data.totalRevisedAreas.toFixed(2);
+            document.getElementById('percentageRevised').innerText = data.percentageRevised.toFixed(2);
+
+            // Atualiza a tabela de revisores
+            const revisoresTableBody = document.getElementById('revisoresTableBody');
+            revisoresTableBody.innerHTML = '';
+
+            data.revisores.forEach(revisor => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${revisor.revisor}</td>
+                    <td>${revisor.areas_revisadas.toFixed(2)}</td>
+                    <td>${revisor.percentage_revised.toFixed(2)}</td>
+                `;
+                revisoresTableBody.appendChild(row);
+            });
+            // Carrega os municípios
+            loadMunicipios(municipio); // Passa o município selecionado
+
+            // Atualiza o gráfico donut
+            atualizarGraficoDonut(data);
+
+            // Atualiza o gráfico de linha ao escolher um município
+            fetchLineChart('7-dias', municipio); // Passa o município para o gráfico de linha
+
+            // Ajusta o mapa para o município selecionado
+            if (!municipio && limitesLayer) {
+                // Se "Todos" for selecionado, ajusta o zoom para o extent completo dos municípios
+                map.fitBounds(limitesLayer.getBounds());
+            } else if (municipio && limitesLayer) {
+                // Filtra o GeoJSON para encontrar a geometria do município selecionado
+                const feature = limitesLayer.getLayers().find(layer => layer.feature.properties.nome === municipio);
+
+                if (feature) {
+                    map.fitBounds(feature.getBounds());  // Ajusta o zoom para a geometria do município
+                }
+            }
+        }
+
+        async function fetchLineChart(intervalo = '7-dias') {
+            const municipio = document.getElementById('municipioSelect').value;
+
+            // Busca os dados para o gráfico de linha (com o município filtrado, se houver)
+            const responseLinha = await fetch('/lotes' + (municipio ? '?municipio=' + municipio : ''));
+            const dadosLinha = await responseLinha.json();
+
+            if (Array.isArray(dadosLinha)) {
+                atualizarGraficoLinha(dadosLinha, intervalo);
+            } else {
+                console.error("dadosLinha não é um array:", dadosLinha);
+            }
+
+            // Atualiza a cor dos botões
+            document.getElementById('btn7Dias').classList.remove('btn-primary', 'btn-secondary');
+            document.getElementById('btnMes').classList.remove('btn-primary', 'btn-secondary');
+
+            if (intervalo === '7-dias') {
+                document.getElementById('btn7Dias').classList.add('btn-primary');  // Azul para o botão de 7 dias
+                document.getElementById('btnMes').classList.add('btn-secondary');  // Cinza para o botão de 30 dias
+            } else {
+                document.getElementById('btn7Dias').classList.add('btn-secondary'); // Cinza para o botão de 7 dias
+                document.getElementById('btnMes').classList.add('btn-primary');     // Azul para o botão de 30 dias
+            }
+        }
+
+        function atualizarGraficoLinha(dados, intervalo = '7-dias') {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+
+            // Verifica se já existe um gráfico e o destrói antes de criar um novo
+            if (lineChartInstance) {
+                lineChartInstance.destroy();
+            }
+
+            // Função para gerar o intervalo de datas
+            function gerarDatas(intervalo) {
+                const hoje = new Date();
+
+                const offsetMs = hoje.getTimezoneOffset() * 60 * 1000; // Obtém o offset de fuso horário em milissegundos
+                const localDate = new Date(hoje.getTime() - offsetMs); // Ajusta a data para o fuso horário local
+
+                const datas = [];
+                let dias = intervalo === 'mes' ? 30 : 7;
+
+                for (let i = 0; i < dias; i++) {
+                    const data = new Date(localDate);
+                    data.setDate(hoje.getDate() - i);
+                    datas.push(data.toISOString().slice(0, 10)); // Formato YYYY-MM-DD
+                }
+
+                return datas.reverse(); // Reverte para começar do dia mais antigo
+            }
+
+            // Gerar as datas dos últimos 7 ou 30 dias
+            const labels = gerarDatas(intervalo);
+
+            // Criar um mapa de datas com valores 0 por padrão
+            const lotesPorDia = {};
+            labels.forEach(data => {
+                lotesPorDia[data] = 0; // Inicializa com 0 lotes revisados
+            });
+
+            // Preenche os dias que têm dados de lotes revisados
+            dados.forEach(item => {
+                lotesPorDia[item.data] = item.lotes_revisados;
+            });
+
+            // Prepara os dados finais para o gráfico
+            const lotesRevisados = labels.map(label => lotesPorDia[label]);
+
+            // Cria o novo gráfico de linha
+            lineChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,  // Datas no eixo X
+                    datasets: [{
+                        label: `Lotes Revisados (${intervalo === '7-dias' ? 'Últimos 7 dias' : 'Últimos 30 dias'})`,
+                        data: lotesRevisados,  // Quantidade de lotes revisados no eixo Y
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,  // O eixo Y começa do zero
+                            ticks: {
+                                color: '#ffffff' // Cor branca no eixo Y
+                    }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#ffffff', // Cor branca no eixo X
+                                autoSkip: intervalo === 'mes',  // Auto-pula labels quando intervalo é de 30 dias
+                                maxTicksLimit: intervalo === 'mes' ? 10 : undefined // Mostra até 10 labels em 30 dias
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff' // Cor branca para a legenda
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Lotes Revisados por Dia',
+                            color: '#ffffff' // Cor branca para o título
+                        }
+                    }
+                }
+            });
+        }
+
+        function atualizarGraficoDonut(data) {
+            const ctx = document.getElementById('donutChart').getContext('2d');
+
+            // Verifica se já existe um gráfico e o destrói antes de criar um novo
+            if (donutChartInstance) {
+                donutChartInstance.destroy();
+            }
+
+            donutChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Revisadas', 'Não Revisadas'],
+                    datasets: [{
+                        label: 'Distribuição',
+                        data: [data.totalRevisedAreas, data.totalAreas - data.totalRevisedAreas],
+                        backgroundColor: ['#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff' // Cor branca para a legenda do gráfico
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Revisões',
+                            color: '#ffffff' // Cor branca para o título
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadMunicipios(selectedMunicipio) {
+            const response = await fetch('/municipios');
+            const municipios = await response.json();
+
+            const dropdown = document.getElementById('municipioSelect');
+            municipios.forEach(function(municipio) {
+                const option = document.createElement('option');
+                option.value = municipio;
+                option.textContent = municipio;
+                dropdown.appendChild(option);
+            });
+        }
+        // Coloque a função `fetchMunicipios` antes de $(document).ready()
+        async function fetchMunicipios(selectedMunicipio) {
+            const response = await fetch('/municipios');
+            const municipios = await response.json();
+
+            const dropdown = document.getElementById('municipioSelect');
+            municipios.forEach(function(municipio) {
+                const option = document.createElement('option');
+                option.value = municipio;
+                option.textContent = municipio;
+                dropdown.appendChild(option);
+            });
+        }
+        $(document).ready(function() {
+            initMap(); // Inicializa o mapa
+            fetchData(); // Chama a função para carregar os dados ao carregar a página
+            fetchMunicipios(); // Preenche o dropdown com municípios
+            fetchLineChart('7-dias'); // Desenha o gráfico de linha com os últimos 7 dias por padrão
+        });
+
+    </script>
+</body>
+</html>
